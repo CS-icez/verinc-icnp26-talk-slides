@@ -1,0 +1,74 @@
+% 12pt 打底，不是模板的 9pt。
+% 会议 talk 与组会分享的口径不同：页面高 255.1pt，PowerPoint 16:9 页面高 540pt，
+% 换算系数 2.117。社区惯例是正文不小于 24pt（PowerPoint 口径），折回来要 11.3pt。
+% 模板的 9pt 打底 + 密集帧套 \small，实测正文落在 7–8pt，等效只有 15–17pt。
+% 代价是版面容量降到 (8/12)^2 ≈ 44%，每页内容必须砍掉一半以上——这是目的不是副作用。
+\documentclass[aspectratio=169,12pt]{beamer}
+\input{preamble}
+
+% ------------------------------------------------------------
+% 讲稿模式开关（由 Makefile 在命令行注入，勿手改）
+%   slides = 只出幻灯片（默认，放映用）
+%   dual   = 双宽页面，右半是讲稿（接双屏；直接投影观众会看到稿子）
+%   notes  = 只出讲稿（导手机/平板）
+%   pptx   = 同 dual，但讲稿页只放本页该念的那一块（转 pptx 用，见 Makefile）
+% ------------------------------------------------------------
+\usepackage{etoolbox}
+\providecommand{\notemode}{slides}
+\ifdefstring{\notemode}{dual}{\setbeameroption{show notes on second screen=right}}{}
+\ifdefstring{\notemode}{pptx}{\setbeameroption{show notes on second screen=right}}{}
+\ifdefstring{\notemode}{notes}{\setbeameroption{show only notes}}{}
+
+\title{VeriNC}
+\subtitle{Finding Design Risks of In-Network Computing Systems}
+% 作者列表走 \paperinfo 排在左半，右下只留会议与地点。
+\author{}
+\institute{}
+\date{ICNP 2026 \textperiodcentered\ Tempe, AZ}
+\paperinfo{%
+  Tianyu Bai\textsuperscript{1}\quad
+  Xiaoxi Zhang\textsuperscript{2}\quad
+  Haoqing Wang\textsuperscript{1}\quad
+  Ying Zhang\textsuperscript{3}\quad
+  Wenfei Wu\textsuperscript{1}\\[0.45em]
+  \textsuperscript{1}Peking University \textperiodcentered\
+  \textsuperscript{2}Sun Yat-sen University \textperiodcentered\
+  \textsuperscript{3}Meta}
+
+\input{tikz/inc-concept}     % 第 1 帧的 INC 概念图（TikZ，随 overlay 分步出现）
+\input{tikz/netcache-trace}  % 第 3 帧的违例 trace（TikZ 重绘，论文原图投影上糊掉）
+
+\input{speech-notes}   % 由 speech2tex.py 从 speech.md 生成
+
+\begin{document}
+
+\darktitlepage[1]   % 可选参数 = 封面讲稿段号（speech.md 的 **P1.**）
+
+% \section{} 仍然写着，因为 frametitle 上的进度条要靠它；只是 sectionpage=none
+% （见 preamble），章节不单独出页。
+\input{sections/01-problem}
+\input{sections/02-verinc}
+\input{sections/03-tractable}
+\input{sections/04-results}
+
+% ============ 结束页 ============
+% standout 帧的两个坑：紧跟 {...} 会被当 frametitle 吃掉（先放 \vspace*{0pt}）；
+% 帧内不能用 \\（dual 模式报 There's no line here to end）。
+\begin{frame}[standout]
+  \vspace*{0pt}
+
+  {\Large Thank you}
+
+  \vspace{1.0em}
+  {\large Questions?}
+
+  \vspace{1.4em}
+  {\footnotesize\texttt{github.com/cs-icez/verinc-compiler}}
+
+  {\footnotesize\texttt{github.com/cs-icez/verinc-violation}}
+
+  \vspace{0.8em}
+  {\footnotesize tianyubai@stu.pku.edu.cn}
+\end{frame}
+
+\end{document}

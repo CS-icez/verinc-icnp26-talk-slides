@@ -1,0 +1,60 @@
+% !TEX root = ../main.tex
+% ============================================================
+% 第 1 页：什么是在网计算
+%
+% \useasboundingbox 固定画布，否则 overlay 逐步出现时布局会上下跳动。
+% ============================================================
+\newcommand{\incconcept}{%
+\begin{tikzpicture}[
+    yscale=0.92,  % 压行距不压字号：节点文字不受 scale 影响，只有坐标被压
+    every node/.style={font=\small},
+    box/.style={draw, rounded corners=2pt, minimum height=8mm, inner xsep=6pt},
+    host/.style={box, draw=cTextLight, fill=black!5},
+    sw/.style={box, draw=cTextLight, fill=black!5},
+    % 蓝而不是红：红色在这份 deck 里是 \alert 的颜色，第 3 帧拿它标丢包和违例。
+    % 第 1 帧讲的是 INC 的好处，用红色会把"这里出问题了"的语义稀释掉。
+    swhot/.style={box, draw=cHeader, thick, fill=cAccentLight},
+    dim/.style={box, draw=black!25, fill=black!3, text=black!40},
+    ar/.style={-{Stealth[round]}, thick, draw=cText},
+    arhot/.style={-{Stealth[round]}, thick, draw=cHeader},
+    lbl/.style={font=\scriptsize, inner sep=2pt},
+    tag/.style={font=\small\bfseries, anchor=west},
+  ]
+  \useasboundingbox (-0.3,-1.25) rectangle (12.6,4.45);
+
+  % ---------- 上：传统网络 ----------
+  % 回程不绕路。原来那版从 Server 底下拉一条线绕回 Client，看着像把交换机
+  % 跳过去了——而这张图恰恰要说交换机在两个方向上都只是转发。
+  % 现在每一跳都是一条独立箭头：上行两段、下行两段，交换机两次 forward。
+  \node[tag, text=cText] at (-0.3,4.15) {Traditional Networks};
+  \node[host] (c1) at (1.1,3.1) {Clients};
+  \node[sw]   (s1) at (5.3,3.1) {Switch};
+  \node[host] (v1) at (9.9,3.1) {Server};
+
+  \draw[ar] ([yshift=3.5pt]c1.east) -- node[lbl, above]{request}  ([yshift=3.5pt]s1.west);
+  \draw[ar] ([yshift=3.5pt]s1.east) -- node[lbl, above]{forward}  ([yshift=3.5pt]v1.west);
+  \draw[ar] ([yshift=-3.5pt]v1.west) -- node[lbl, below]{reply}   ([yshift=-3.5pt]s1.east);
+  \draw[ar] ([yshift=-3.5pt]s1.west) -- node[lbl, below]{forward} ([yshift=-3.5pt]c1.east);
+
+  \only<2->{
+    % ---------- 下：INC ----------
+    \node[tag, text=cHeader] at (-0.3,1.25) {In-Network Computing (INC)};
+    \node[host]  (c2) at (1.1,0.2) {Clients};
+    \node[swhot] (s2) at (5.3,0.2) {Switch \textbf{computes}};
+    \node[dim]   (v2) at (9.9,0.2) {Server};
+
+    \draw[ar]    ([yshift=3.5pt]c2.east) -- node[lbl, above]{request} ([yshift=3.5pt]s2.west);
+    \draw[arhot] ([yshift=-3.5pt]s2.west) -- node[lbl, below, text=cHeader]{reply}  ([yshift=-3.5pt]c2.east);
+    \draw[draw=black!25, dashed] (s2) -- node[lbl, above, text=black!45]{often bypassed} (v2);
+  }
+\end{tikzpicture}}
+
+% 三个应用例子。不用 TikZ 手工定位——盒子宽度由文字决定，手给 x 坐标
+% 必然有一天撞在一起（第一版就撞了，三个标签全被切掉右半）。
+% 也不用 colorbox：三个色块加内边距就超出文本宽度，第三个会掉到第二行。
+% 一行纯文字，\footnotesize（10pt，等效 21pt）——这是辅助信息，比正文小一档没问题。
+\newcommand{\incexamples}{%
+  {\centering\footnotesize
+    Tensor aggregation {(SwitchML)}\ \textcolor{cHeader}{\textperiodcentered}\ 
+    Key-value cache {(NetCache)}\ \textcolor{cHeader}{\textperiodcentered}\ 
+    Lock manager {(NetLock)}\par}}

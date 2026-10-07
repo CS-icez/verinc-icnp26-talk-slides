@@ -1,0 +1,117 @@
+% !TEX root = ../main.tex
+% ============================================================
+% 第 3 页：NetCache 的一致性违例 trace（重绘）
+%
+% 论文原图 1836x2468 竖长，16:9 页面上最宽只到 152pt，图内 45pt 的标签
+% 缩到 3.7pt，投影上糊成一片。这里按投影重画，13cm 宽 1:1 排版不缩放。
+%
+% 排版上踩过的三个坑，改这张图前先读：
+%
+% 1. 消息名不要用数学模式。$W(V_1)$ 在 beamer 下排成 Computer Modern 的
+%    数学斜体衬线体，而正文是 LMSans——一张图里两套字，看着就是乱。
+%    统一用文本模式 + \textsubscript，字体自动跟正文走。
+% 2. fill=white 只给真正压在泳道线上的标签。箭头标签用的是 above，本来就
+%    在线的上方不压线，全都加白底的结果是满图白方块。
+% 3. 不用 \emph。斜体在这张图里没有语义，只会再添一种字形。
+%    要强调就用颜色和粗细——蓝=交换机自己的状态，红=出问题的地方。
+%
+% 丢掉的包画到半路就断、末端打叉：画到交换机上看着就像送到了。
+% 每行至少空 0.3，否则会被上一行的箭头穿过。
+% yscale 只压坐标不压字号。\useasboundingbox 固定画布，免得每个 overlay 图高不同。
+% ============================================================
+\newcommand{\msg}[1]{{\scriptsize #1}}          % 消息名：正体，跟正文同一套字
+\newcommand{\vone}{V\textsubscript{1}}
+\newcommand{\vtwo}{V\textsubscript{2}}
+
+\newcommand{\netcachetrace}{%
+\begin{tikzpicture}[
+    yscale=0.80,
+    every node/.style={font=\scriptsize},
+    lane/.style={draw=black!30},
+    lifeok/.style={draw=cHeader, line width=1.1pt},
+    lifebad/.style={draw=black!38, line width=1.1pt, dash pattern=on 2pt off 2pt},
+    head/.style={draw=cTextLight, rounded corners=2pt, fill=black!5,
+                 minimum height=6.5mm, inner xsep=7pt, font=\small\bfseries},
+    ar/.style={-{Stealth[round]}, draw=cText},
+    arbad/.style={-{Stealth[round]}, draw=cRed, dashed},
+    arhot/.style={-{Stealth[round]}, draw=cRed, thick},
+    lbl/.style={inner sep=2pt},                        % 不加白底
+    lblx/.style={inner sep=2pt},
+    st/.style={inner sep=2pt, text=cHeader, font=\scriptsize\bfseries, anchor=east},
+    stbad2/.style={inner sep=2pt, text=black!55, font=\scriptsize\bfseries, anchor=east},
+    stbad/.style={inner sep=2pt, text=cRed, font=\footnotesize\bfseries},
+    xmark/.style={font=\normalsize\bfseries, text=cRed, inner sep=0pt},
+  ]
+  \useasboundingbox (-0.35,-0.45) rectangle (12.95,6.05);
+
+  \def\cx{1.15} \def\sx{6.3} \def\vx{11.5}
+
+  \node[head] at (\cx,5.68) {Client};
+  \node[head] at (\sx,5.68) {Switch};
+  \node[head] at (\vx,5.68) {Server};
+  % Switch 的生命线分段上色，用线本身表示缓存状态：蓝实线=有效，灰虚线=无效。
+  % 这样状态不再占一行的高度（原来 "cache: invalid" 和 "cache: V1, valid"
+  % 各吃掉一个行位，九步消息就排不开了），切换点只留一个很短的标签。
+  % Client 和 Server 的生命线保持细灰线——这张图要看的是交换机怎么想。
+  \only<2->{ \draw[lifeok] (\sx,5.35) -- (\sx,4.95); }
+  \only<2>{  \draw[lifebad] (\sx,4.95) -- (\sx,-0.25); }
+  \only<3->{
+    \draw[lifebad] (\sx,4.95) -- (\sx,2.43);
+    \draw[lifeok]  (\sx,2.43) -- (\sx,-0.25);
+  }
+  \only<2->{
+    \draw[lane] (\cx,5.35) -- (\cx,-0.25);
+    \draw[lane] (\vx,5.35) -- (\vx,-0.25);
+  }
+
+  % 第一个 overlay 不能是三条空泳道——那是两秒的空白。这两秒用来说明 NetCache
+  % 本身怎么工作，trace 一开始跑就撤掉，把地方让给箭头。生命线从说明下方起，
+  % 这样文字不压线，也不必给它铺白底。
+  \only<1>{
+    \foreach \x in {\cx,\sx,\vx} { \draw[lane] (\x,3.70) -- (\x,-0.25); }
+    \node[text width=2.9cm, align=center, font=\footnotesize] at (\cx,4.55)
+         {writes, then\\reads back};
+    \node[text width=3.4cm, align=center, font=\footnotesize] at (\sx,4.55)
+         {caches the item,\\answers reads itself};
+    \node[text width=2.9cm, align=center, font=\footnotesize] at (\vx,4.55)
+         {source of truth,\\keeps it in sync};
+  }
+
+  % 九行消息，行距统一 0.63。原来漏了服务器对 W(V2) 的回复——没有它，
+  % 最后那个读就是和写并发的，而违例的前提恰恰是"读不与任何写并发"。
+  % ---- overlay 2：写 V1，更新包丢了，客户端却收到了成功回复 ----
+  \only<2->{
+    \draw[ar] (\cx,4.95) -- node[lbl,above]{\msg{W(\vone)}} (\sx,4.95);
+    \draw[ar] (\sx,4.95) -- node[lbl,above]{\msg{W(\vone)}} (\vx,4.95);
+    \node[stbad2] at (\sx-0.06,4.55) {invalid};
+
+    \draw[arbad] (\vx,4.32) -- node[lbl,above]{\msg{Upd(\vone)}} (\sx+1.45,4.32);
+    \node[xmark] at (\sx+1.15,4.32) {$\times$};
+
+    \draw[ar] (\vx,3.69) -- node[lbl,above,pos=0.72]{\msg{Reply[W(\vone)]}} (\cx,3.69);
+  }
+
+  % ---- overlay 3：写 V2 被挡住，重传的旧更新把缓存置成了 valid ----
+  \only<3->{
+    \draw[ar] (\cx,3.06) -- node[lbl,above]{\msg{W(\vtwo)}} (\sx,3.06);
+    \draw[ar] (\sx,3.06) -- node[lbl,above]{\msg{W(\vtwo)}} (\vx,3.06);
+    \node[anchor=west, font=\scriptsize\bfseries, inner sep=2pt]
+         at (\vx+0.12,2.79) {blocked};
+
+    \draw[ar] (\vx,2.43) -- node[lbl,above]{\msg{Upd(\vone)} retransmitted} (\sx,2.43);
+    \node[st] at (\sx-0.06,2.03) {valid: \vone};
+  }
+
+  % ---- overlay 4：新的更新又丢了，读命中一个自以为有效的缓存 ----
+  % 读和回复分两行，不合成双向箭头：中间隔着交换机的一次判断——它认为自己
+  % 的缓存有效，才从缓存里答的。画成一条往返就把那个判断藏掉了。
+  \only<4->{
+    \draw[arbad] (\vx,1.80) -- node[lbl,above]{\msg{Upd(\vtwo)}} (\sx+1.45,1.80);
+    \node[xmark] at (\sx+1.15,1.80) {$\times$};
+
+    \draw[ar] (\vx,1.17) -- node[lbl,above,pos=0.72]{\msg{Reply[W(\vtwo)]}} (\cx,1.17);
+
+    \draw[ar] (\cx,0.54) -- node[lbl,above]{\msg{R}} (\sx,0.54);
+    \draw[arhot] (\sx,-0.09) -- node[lbl,above,text=cRed]{\msg{\vone\ --- stale}} (\cx,-0.09);
+  }
+\end{tikzpicture}}

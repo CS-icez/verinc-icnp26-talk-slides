@@ -1,0 +1,89 @@
+% !TEX root = ../main.tex
+\section{The Problem}
+
+\begin{frame}{Computation Is Moving Into the Switch}
+  \vspace{0.2em}
+  \begin{center}\incconcept\end{center}
+  \vspace{0.1em}
+  % \visible 而不是 \only：\only 不占位，这行例子一出现会把上面整块往上推 11pt
+  \visible<3->{\incexamples}
+  \speechnote{2}
+\end{frame}
+
+\begin{frame}{Why Correctness Is Hard Here}
+  \vspace{0.6em}
+  \begin{itemize}
+    \item[] \textbf{Network unreliability leads to computational errors.}\\
+            TCP makes delivery reliable \emph{between the endpoints}.
+            The switch in the middle still sees loss, duplication and reordering.
+    \vspace{1.0em}
+    \item[]<2-> \textbf{And the switch cannot recover from them.}\\
+            No loops. One memory access per pipeline stage.
+            No reliable transport in the data plane.
+  \end{itemize}
+  \vspace{1.2em}
+  \visible<3->{%
+    \begin{center}
+      \begin{minipage}{0.92\textwidth}
+        \centering
+        \alert{This is what distinguishes INC from a traditional distributed system:}\par
+        \alert{there, every node is a general-purpose server}\par
+        \alert{with rich computation and storage resources.}
+      \end{minipage}
+    \end{center}}
+  \speechnote{3}
+\end{frame}
+
+\begin{frame}{NetCache Returns a Value That Was Overwritten}
+  \vspace{0.1em}
+  \begin{center}\netcachetrace\end{center}
+  \vspace{0.2em}
+  \begin{center}
+    \begin{minipage}{0.94\textwidth}
+      \centering
+      \only<1>{{A write-through cache. Watch what the switch believes about it.}}%
+      \only<2>{The client is told the write succeeded --- but the cache never heard about it.}%
+      \only<3>{The retransmitted \emph{old} update marks the cache valid again.}%
+      \only<4>{\alert{\textbf{Cache consistency is violated: the read is not concurrent with any write, but does not get the latest value.}}}%
+    \end{minipage}
+  \end{center}
+  \speechnote{4}
+\end{frame}
+
+\begin{frame}{This Is Not Something You Find by Thinking Harder}
+  \vspace{0.4em}
+  Two specific losses, in one specific interleaving.
+  \vspace{0.5em}
+
+  Protocols get designed for a reliable network,
+  then \emph{patched} for the exceptions. That fails three ways.
+  \vspace{0.9em}
+  \begin{itemize}
+    \item The exceptions you never thought of are never patched
+    \item A patch addresses one specific exception, not the root cause
+    \item Patches conflict with each other once several exceptions co-occur
+  \end{itemize}
+  \vspace{1.0em}
+  \begin{center}
+    \alert{Synthetic workloads and simulators do not exhaustively enumerate these.}
+  \end{center}
+  \speechnote{5}
+\end{frame}
+
+\begin{frame}{Existing Verification Does Not Answer This}
+  \vspace{0.8em}
+  \begin{itemize}
+    \item \textbf{Network verification} checks routing ---
+          reachability, loops, isolation.\\
+          {No computation involved.}
+    \vspace{0.8em}
+    \item \textbf{HSA and NetSMC} assume a stateless network,
+          or reason about one packet at a time.\\
+          INC switches hold state across many related packets.
+    \vspace{0.8em}
+    \item \textbf{P4 program verifiers} (p4v, Vera, Aquila)
+          check the \emph{implementation}.\\
+          We ask whether the \emph{design} itself is correct.
+  \end{itemize}
+  \speechnote{6}
+\end{frame}

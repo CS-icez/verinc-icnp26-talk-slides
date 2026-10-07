@@ -1,0 +1,328 @@
+% !TEX root = main.tex
+% ============================================================
+% 共用 preamble —— 随 deck 自带，改这里只影响本 deck
+% ============================================================
+% moloch 只支持四个选项：progressbar / sectionpage / subsectionpage / background
+% （metropolis 的 numbering、block 靠 \patchcmd 实现，moloch 砍掉了，走 beamer 标准模板）
+% sectionpage=none：12 分钟的 talk 不出章节页（见 main.tex 的说明）。
+% \section{} 照写，frametitle 上的进度条要靠它。
+\usetheme[progressbar=frametitle,
+          sectionpage=none]{moloch}
+\usepackage[UTF8]{ctex}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{makecell}
+\usepackage{amsmath,amssymb}
+\usetikzlibrary{calc,positioning,arrows.meta}
+
+% ------------------------------------------------------------
+% 版面密度
+% beamer 的 pt 是相对 453.54pt 宽的页面算的，PowerPoint 是相对 720pt。
+% 同样点数，beamer 里的字视觉上大 1.6 倍——照搬 pptx 的 11pt 必然溢出。
+% 这里压紧列表间距；字号在 \documentclass 上用 9pt 打底。
+% ------------------------------------------------------------
+% 不要用 enumitem：它一加载就接管 enumerate，与 beamer 的 \labelenumi
+% 互相引用，编译时无限递归报 TeX capacity exceeded。改用钩子只压间距。
+\usepackage{etoolbox}
+\AtBeginEnvironment{itemize}{\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}
+\AtBeginEnvironment{enumerate}{\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}
+
+% ------------------------------------------------------------
+% 配色（沿用既有 pptx deck 的 design tokens）
+% ------------------------------------------------------------
+\definecolor{cPrimary}{HTML}{1B3A5C}
+\definecolor{cAccent}{HTML}{2E6CA4}
+% 深色块（封面 / section 页 / frametitle 背景）单独一个颜色，
+% 与正文强调色 cPrimary 解绑——改标题栏配色只动这两行
+\definecolor{cHeader}{HTML}{2E6CA4}
+\definecolor{cHeaderAccent}{HTML}{8FBFE0}
+\definecolor{cAccentLight}{HTML}{E8F0FE}
+\definecolor{cAccentPale}{HTML}{F4F8FE}
+\definecolor{cText}{HTML}{333333}
+\definecolor{cTextLight}{HTML}{666666}
+\definecolor{cGreen}{HTML}{2E7D32}
+\definecolor{cRed}{HTML}{C62828}
+
+\setbeamercolor{normal text}{fg=cText}
+\setbeamercolor{alerted text}{fg=cRed}
+\setbeamercolor{example text}{fg=cGreen}
+\setbeamercolor{palette primary}{bg=cHeader, fg=white}    % 标题页 / section 页
+\setbeamercolor{frametitle}{bg=cHeader, fg=white}
+% moloch 的 progress bar 默认从 alerted text 派生（fg 红、bg 暗红），只覆盖 fg
+% 会在 section 页留下一条红线。两个场景底色相反，所以分开设：
+%   head/foot  画在深色 frametitle 上 → 亮前景
+%   section page 画在浅色页面上 → 深前景
+\setbeamercolor{progress bar}{fg=cHeaderAccent, bg=cHeader!20!white}
+\setbeamercolor{progress bar in head/foot}{fg=white, bg=cHeader!55!white}
+\setbeamercolor{progress bar in section page}{fg=cHeader, bg=cHeader!15!white}
+\setbeamercolor{title separator}{fg=cHeaderAccent, bg=cHeader}
+\setbeamercolor{block title}{bg=cAccentLight, fg=cPrimary}
+\setbeamercolor{block body}{bg=cAccentPale, fg=cText}
+
+% 页码用 beamer 标准模板（不是 metropolis 的 frame numbering）
+\setbeamertemplate{page number in head/foot}{%
+  \insertframenumber{}/\inserttotalframenumber}
+\setbeamerfont{page number in head/foot}{size=\tiny}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+% 三色 block：block=蓝（常规补充）/ exampleblock=绿（结论、好消息）/ alertblock=橙（矛盾、问题）
+% 讲稿里"不是现在该念的那块"。比 cTextLight 淡得多——它只要能读出轮廓、
+% 供眼睛确认上下文位置即可，真正要读的是 \speechon 那块。
+\definecolor{cSpeechOff}{HTML}{E7E6E6}
+\definecolor{cGreenBg}{HTML}{E8F5E9}
+\definecolor{cWarnBg}{HTML}{FFF3E0}
+\setbeamercolor{block title example}{bg=cGreenBg, fg=cGreen}
+\setbeamercolor{block body example}{bg=cGreenBg, fg=cText}
+\setbeamercolor{block title alerted}{bg=cWarnBg, fg=cRed}
+\setbeamercolor{block body alerted}{bg=cWarnBg, fg=cText}
+
+% ------------------------------------------------------------
+% 规约代码（第 8、9 帧）。模板不带 listings，这里按 deck 需要加。
+% 用 lstlisting 的帧必须写 \begin{frame}[fragile]。
+% 字号 \small 在 12pt 类下是 11pt，等效 PowerPoint 23pt——代码比正文小一档
+% 是可以的（听众会盯着看），但不能再小。
+% ------------------------------------------------------------
+\usepackage{listings}
+\definecolor{cCodeBg}{HTML}{FAFAFA}
+\definecolor{cCodeKw}{HTML}{1B5E8C}
+\definecolor{cCodeType}{HTML}{2E7D32}
+\lstdefinestyle{spec}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{cCodeBg},
+  frame=single, rulecolor=\color{black!20},
+  framesep=5pt, xleftmargin=4pt, xrightmargin=4pt,
+  keywordstyle=[1]\color{cCodeKw}\bfseries,
+  keywordstyle=[2]\color{cCodeType},
+  keywords=[1]{configuration,topology,protocol,property,nodetype,link,var,thread,route},
+  morekeywords=[2]{Client,Switch,Controller,Server},
+  commentstyle=\color{cTextLight}\itshape,
+  comment=[l]{//},
+  showstringspaces=false,
+  aboveskip=0pt, belowskip=0pt,
+}
+
+% 表格里的对勾/叉（Fandol 没有这些字形，走 pifont）
+\usepackage{pifont}
+\newcommand{\cmark}{\textcolor{cGreen}{\ding{51}}}
+\newcommand{\xmark}{\textcolor{cRed}{\ding{55}}}
+
+% ------------------------------------------------------------
+% 封面版式：左半论文信息，右半下方会议信息
+% moloch 原版把 title/subtitle/author/institute/date 从上往下堆成一列，
+% 16:9 页面下右半边整个空着。这里改成左右分栏，右半用 \vfill 压到底部。
+% 论文自身的信息（作者、发表处）走 \paperinfo，与 \author/\institute 分开。
+% ------------------------------------------------------------
+\newcommand{\insertpaperinfo}{}
+\newcommand{\paperinfo}[1]{\renewcommand{\insertpaperinfo}{#1}}
+
+% moloch 给 author 和 date 设了 \small，institute 漏了，掉回 beamer 默认的
+% \scriptsize，封面上 NetLab 比上下两行都小一档。补齐到同级。
+\setbeamerfont{institute}{size=\small}
+
+% 分隔线：moloch 原版用 \textwidth，在 minipage 里会顶出去，改用 \linewidth
+\newcommand{\titlerule}{%
+  \tikzexternaldisable%
+  \begin{tikzpicture}
+    \fill[cHeaderAccent] (0,0) rectangle (\linewidth, 0.4pt);
+  \end{tikzpicture}%
+  \tikzexternalenable\par%
+}
+
+\setbeamertemplate{title page}{%
+  \begin{minipage}[t][0.86\textheight][t]{\textwidth}
+    \vspace*{0.10\textheight}
+    % --- 左半：论文 ---
+    % 模板给 0.66（右下要留给 \author/\institute）。这份 deck 右下只有会议信息，
+    % 而作者列表五个人一行放不下会折行，所以放宽到 0.82。
+    \begin{minipage}[t]{0.82\textwidth}
+      \raggedright
+      {\usebeamerfont{title}\usebeamercolor[fg]{title}\inserttitle\par}
+      \vspace*{0.7em}
+      {\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}
+      \vspace*{1.1em}
+      \titlerule
+      \vspace*{0.9em}
+      {\footnotesize\usebeamercolor[fg]{institute}\insertpaperinfo\par}
+    \end{minipage}
+    \par\vfill
+    % --- 右下：会议与地点 ---
+    % 模板这里是 author / institute / date 三行。这份 deck 只剩会议信息一行，
+    % author / institute 留空，空字段跳过，免得撑出两行空白。
+    \hfill
+    \begin{minipage}[b]{0.40\textwidth}
+      \raggedleft
+      \ifdefempty{\insertauthor}{}{%
+        {\usebeamerfont{author}\usebeamercolor[fg]{author}\insertauthor\par}%
+        \vspace*{0.35em}}
+      \ifdefempty{\insertinstitute}{}{%
+        {\usebeamerfont{institute}\usebeamercolor[fg]{institute}\insertinstitute\par}%
+        \vspace*{1.0em}}
+      {\usebeamerfont{date}\usebeamercolor[fg]{date}\insertdate\par}
+    \end{minipage}
+  \end{minipage}%
+}
+
+% ------------------------------------------------------------
+% 目录：moloch 原版是五行裸文字，没有任何层级标记。
+% 换成带编号的圆点，并压掉条目间过大的留白。
+% ------------------------------------------------------------
+\setbeamercolor{section number projected}{bg=cHeader, fg=white}
+\setbeamerfont{section number projected}{size=\small}
+% 条目之间 beamer 用的是 \vfill（不是可以 patch 的 \vskip），会把可用高度
+% 均分、撑满整页。解法是让它没有空间可撑：目录页用自然高度的 minipage
+% （见 main.tex），间距改由这里的 \vskip 显式给出。模板主体照抄 beamer 的
+% ball，只在开头多一个 \vskip。
+\makeatletter
+\setbeamertemplate{section in toc}{%
+  \vskip1.5em%
+  \leavevmode\leftskip=2.75ex%
+  \llap{%
+    \normalsize%
+    \begin{pgfpicture}{-1ex}{-0.7ex}{1ex}{1ex}
+      \pgftext{\beamer@usesphere{section number projected}{tocsphere}}
+      \pgftext{%
+        \usebeamerfont*{section number projected}%
+        \usebeamercolor{section number projected}%
+        \color{fg!90!bg}%
+        \inserttocsectionnumber}
+    \end{pgfpicture}%
+    \kern1.25ex}%
+  \inserttocsection\par%
+}
+\makeatother
+
+% ------------------------------------------------------------
+% 章节页：moloch 原版只有一行居中黑字 + 一条几乎看不见的进度条，
+% 页面上没有任何正文页的视觉元素（那条钢蓝顶栏），所以看着像另一份 deck。
+% 这里补上同色竖条和章节序号，让它和正文说同一种语言。
+% ------------------------------------------------------------
+\setbeamertemplate{section page}{%
+  \centering
+  \begin{minipage}{0.80\linewidth}
+    \raggedright
+    \begin{minipage}[c]{0.4em}
+      \color{cHeader}\rule{0.34em}{3.4em}
+    \end{minipage}\hspace{1.1em}%
+    \begin{minipage}[c]{\dimexpr\linewidth-2.6em\relax}
+      {\small\color{cHeader}\textbf{Part \insertsectionnumber}}\par
+      \vspace*{0.45em}
+      {\usebeamerfont{section title}\usebeamercolor[fg]{section title}%
+       \insertsectionhead}
+    \end{minipage}
+    \par\vspace*{1.4em}
+    \usebeamertemplate*{progress bar in section page}
+  \end{minipage}
+  \par\vspace{\baselineskip}
+}
+
+% 深色封面（moloch 默认白底，这里对齐既有 deck 的深蓝封面）
+% 用法：正文开头写 \darktitlepage[1] 代替 \maketitle，可选参数是封面那段讲稿的
+% 段号；不给参数就没有讲稿页。
+%
+% 这里不调 \maketitle 而是自己开 frame。原因是 \note 只有写在 frame 内部才会
+% 生成讲稿页，而 moloch 的 \maketitle 只在"已经在 frame 里"时才不自己开 frame——
+% 于是两条路都堵着：调 \maketitle 就拿不到 frame 内部；把 \darktitlepage 塞进
+% \begin{frame} 里，深色设置所在的组会在 \end{frame} 之前出组，而背景是出页时才
+% 取的，封面直接掉回白底。颜色组必须包住整个 frame，所以 frame 只能在组里开。
+\newcommand{\darktitlepage}[1][]{{%
+  % notes 模式下整本 PDF 只有讲稿页，不要染色：讲稿页是在帧尾出的，那时仍在
+  % 这个颜色组里，background canvas 会把封面的讲稿页整页刷成深蓝、字也发白。
+  % 而封面本身在 notes 模式下根本不出页，染色没有任何收益。
+  % （dual 模式不受影响，实测讲稿半边不吃 canvas。）
+  \ifdefstring{\notemode}{notes}{}{%
+    \setbeamercolor{background canvas}{bg=cHeader}%
+    \setbeamercolor{normal text}{fg=white}%
+    \setbeamercolor{title}{fg=white}%
+    \setbeamercolor{subtitle}{fg=cAccentLight}%
+    \setbeamercolor{author}{fg=white}%
+    \setbeamercolor{institute}{fg=cAccentLight}%
+    \setbeamercolor{date}{fg=cAccentLight}%
+    \setbeamercolor{title separator}{fg=cHeaderAccent}%
+  }%
+  \frame[plain,noframenumbering]{%
+    \titlepage%
+    \ifstrempty{#1}{}{\speechnote{#1}}%
+  }%
+}}
+
+% ------------------------------------------------------------
+% ------------------------------------------------------------
+% 讲稿页（dual / notes 模式）的版式
+% beamer 默认的 note page 会塞进幻灯片缩略图 + 竖排标题日期 + 多级导航，
+% 在 pympress 的备注栏里挤掉大半空间，而缩略图和"当前幻灯片"窗格重复。
+% 这里压成一行面包屑（章节 · 帧标题 + 帧号），讲稿正文占满剩下的地方。
+% 用 \ifdefempty 跳过空层级——\section 之前的帧 \insertsection 是空的。
+% ------------------------------------------------------------
+% 讲稿分段高亮：\speechnote{n} 展开出的每个 \note 里，当前该念的那块用
+% \speechon（正常色 + 前导三角），其余块 \speechoff（灰）。\long 是必须的，
+% 块内可能含 \par。
+% \speechon 不设颜色：beamer 排讲稿页之前会 \color{black}，讲稿正文本来就是
+% 纯黑。这里若显式设成正文色 cText(#333333)，分块的帧就比没分块的帧（纯黑）
+% 浅一档——放映时一眼看出来是"多页 frame 的讲稿发灰"。
+\long\def\speechon#1{{$\blacktriangleright$\,#1}}
+\long\def\speechoff#1{{\color{cSpeechOff}#1}}
+% 讲稿进度。notes 模式下 \insertframenumber / \insertpagenumber 都不可靠
+% （分母恒为默认值 100 / 1），所以帧进度由 speech2tex 注入；只有 overlay 号
+% 用 beamer 的 \insertoverlaynumber——那个是准的。
+\providecommand{\speechindex}{?}
+\providecommand{\speechcount}{?}
+\providecommand{\speechtotal}{1}
+\newcommand{\notecrumb}{\;\textcolor{cAccent}{\textperiodcentered}\;}
+\setbeamertemplate{note page}{%
+  {\scriptsize\textcolor{cTextLight}{%
+    \ifdefempty{\insertsection}{}{\insertsection\notecrumb}%
+    \ifdefempty{\insertsubsection}{}{\insertsubsection\notecrumb}%
+    % 封面帧没有 frametitle，退回论文标题，免得面包屑只剩一个"讲稿 1/19"
+    \textcolor{cPrimary}{%
+      \ifdefempty{\insertframetitle}{\inserttitle}{\insertframetitle}}%
+    \hfill note \speechindex/\speechcount
+    % 讲稿分块了就给出 i/k；没分块但已经按过空格，至少报个 i，
+    % 免得站在台上不知道这一帧按到第几下了。
+    \ifnum\speechtotal>1
+      \notecrumb step \insertoverlaynumber/\speechtotal
+    \else
+      \ifnum\insertoverlaynumber>1 \notecrumb step \insertoverlaynumber\fi
+    \fi}}%
+  \par\vspace{2pt}\hrule\vspace{8pt}%
+  % \small 而不是 \normalsize：最长的一段讲稿（NetCache 那帧，240 词分四块）
+  % 在 \normalsize 下第四块会被挤出讲稿页——而讲稿页是静默截断的，
+  % 台上翻到那一步会发现要念的话不在屏幕上。\small 仍然不够，用 \footnotesize；
+  % 讲稿页是近距离看的，而且 pympress 会把它缩放进备注栏，10pt 完全够。
+  {\footnotesize\insertnote}%
+}
+
+% 图片叠标注：归一化坐标，(0,0)=图左下角，(1,1)=图右上角
+% 用法：
+%   \begin{annotfig}[width=0.6\textwidth]{figures/fig2.pdf}
+%     \hlbox<2->{0.05}{0.55}{0.55}{0.90}
+%     \arrowto<3->{0.80}{0.30}{0.50}{0.60}
+%     \annot<3->{0.80}{0.25}{瓶颈在这里}
+%   \end{annotfig}
+% 不用管图片实际尺寸，改 width 后标注坐标不需要跟着改。
+% ------------------------------------------------------------
+\newenvironment{annotfig}[2][width=\textwidth]{%
+  \begin{tikzpicture}
+    \node[anchor=south west,inner sep=0] (img) at (0,0) {\includegraphics[#1]{#2}};
+    \begin{scope}[x={(img.south east)},y={(img.north west)}]
+}{%
+    \end{scope}
+  \end{tikzpicture}%
+}
+
+% 红框圈重点：{x1}{y1}{x2}{y2}
+\newcommand<>{\hlbox}[4]{%
+  \only#5{\draw[cRed,very thick,rounded corners] (#1,#2) rectangle (#3,#4);}%
+}
+% 箭头指向：{起点x}{起点y}{终点x}{终点y}
+\newcommand<>{\arrowto}[4]{%
+  \only#5{\draw[->,cRed,very thick,>={Stealth[round]}] (#1,#2) -- (#3,#4);}%
+}
+% 图上贴标签：{x}{y}{文字}
+\newcommand<>{\annot}[3]{%
+  \only#4{\node[fill=white,draw=cRed,rounded corners,inner sep=2pt,
+                font=\scriptsize,align=center] at (#1,#2) {#3};}%
+}
+% 半透明遮罩压暗非重点区域：{x1}{y1}{x2}{y2}
+\newcommand<>{\dimbox}[4]{%
+  \only#5{\fill[white,opacity=0.65] (#1,#2) rectangle (#3,#4);}%
+}

@@ -1,0 +1,54 @@
+% !TEX root = ../main.tex
+\section{Making It Tractable}
+
+\begin{frame}{Challenge: The State Space Explodes}
+  \vspace{0.4em}
+  Every packet may be dropped, reordered, or retransmitted at any moment.
+  \vspace{1.0em}
+  \begin{itemize}
+    \item<2-> \textbf{INC objects are usually logically independent.}\\
+          So we model just one of them.
+    \vspace{0.6em}
+    \item<3-> \textbf{Nodes of the same type are symmetric.}\\
+          So we explore one arrangement and discard its permutations ---
+          without losing completeness.
+    \vspace{0.6em}
+    \item<4-> \textbf{A little unreliability is usually enough.}\\
+          So we constrain it: a maximum number of losses, reorderings
+          and duplicates.
+  \end{itemize}
+  \speechnote{11}
+\end{frame}
+
+\begin{frame}{What It Costs to Run}
+  \vspace{0.2em}
+  \begin{center}
+    \footnotesize
+    \renewcommand{\arraystretch}{0.95}
+    \begin{tabular}{@{}lrrr@{}}
+      \toprule
+      \textbf{System} & \textbf{VeriNC} & \textbf{TLA\textsuperscript{+}}
+        & \textbf{To first violation} \\
+      \midrule
+      FissLock  & 466 & 1053 & 1\,s \\
+      SwitchML  &  98 &  440 & 3\,s \\
+      NetCache  & 190 &  589 & 8\,s \\
+      NetReduce & 146 &  486 & 72\,s \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vspace{0.6em}
+  \begin{center}
+    \begin{minipage}{0.94\textwidth}
+      \centering
+      % 手动断行：自己折的话 "to." 会单独掉到第二行
+      On average the specification is \textbf{67.2\% shorter}\\
+      than the TLA\textsuperscript{+} it compiles to.
+      \vspace{0.5em}
+
+      Violations usually sit in the \emph{shallow} layers of the state space,
+      so breadth-first search reaches them early.
+    \end{minipage}
+  \end{center}
+  \speechnote{12}
+\end{frame}

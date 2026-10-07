@@ -1,0 +1,89 @@
+% !TEX root = ../main.tex
+\section{What We Found}
+
+\begin{frame}{Seven of Nine Systems Violate Properties}
+  \begin{center}
+    \footnotesize
+    \renewcommand{\arraystretch}{0.95}
+    \begin{tabular}{@{}llc@{}}
+      \toprule
+      \textbf{System} & \textbf{Property violated} & \textbf{Network} \\
+      \midrule
+      SwitchML  & computational correctness & out-of-order \\
+      ATP       & memory leak freedom       & out-of-order \\
+      NetReduce & terminality               & lossy \\
+      \addlinespace[0.45em]
+      NetCache  & cache consistency & lossy \\
+      NetCache  & terminality       & reliable \\
+      FarReach  & cache consistency & reliable \\
+      \addlinespace[0.45em]
+      NetLock   & lock exclusion & delayed \\
+      FissLock  & lock exclusion & delayed \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vspace{0.7em}
+  \begin{center}
+    \begin{minipage}{0.94\textwidth}
+      \centering
+      \visible<2->{Few of these systems explicitly state their network assumptions.}
+    \end{minipage}
+  \end{center}
+  \speechnote{13}
+\end{frame}
+
+\begin{frame}{Not Just on Paper}
+  \vspace{0.5em}
+  \begin{itemize}
+    \item Following each violation trace, we injected exactly those losses
+          and delays into the \textbf{real open-source implementations}.
+    \vspace{0.7em}
+    \item<2-> \textbf{All six open-source systems reproduced the violation.}
+    \vspace{0.7em}
+    \item<3-> The authors of \textbf{ATP} and \textbf{NetReduce} confirmed these
+          were oversights at design time.
+    \vspace{0.7em}
+    \item<4-> \textbf{EPIC} (SIGCOMM~'26) used VeriNC \emph{during} its design ---
+          a buffer management pitfall was fixed before publication.
+  \end{itemize}
+  \speechnote{14}
+\end{frame}
+
+\begin{frame}{Three Patterns Behind Those Violations}
+  \vspace{0.6em}
+  \begin{itemize}
+    \item \textbf{Stale packets pollute switch state.}\\
+          {Give the switch a way to recognize them.}
+    \vspace{0.8em}
+    \item \textbf{Concurrent events race with no coordination.}\\
+          {Handle how events interact, not one event at a time.}
+    \vspace{0.8em}
+    \item \textbf{Unreliability turns a latent risk into a real violation.}\\
+          {Most of what we found needs only a single such event.}
+  \end{itemize}
+  \speechnote{15}
+\end{frame}
+
+\begin{frame}{Conclusion}
+  \vspace{0.6em}
+  % 条目间距用 itemsep 统一给，不要逐条插 \vspace——手插的间距在折行的条目
+  % 之间表现不一致，三条看着一条比一条挤。preamble 的钩子把 itemsep 设成 2pt，
+  % 在环境内部再设一次就能盖掉（钩子先执行）。
+  \begin{itemize}
+    \setlength{\itemsep}{0.9em}
+    \item \textbf{Design-level verification} for in-network computing systems
+    \item A high-level \textbf{specification language} and
+          \textbf{configurable network environments}
+    \item Nine systems modeled; design risks in seven of them, found in
+          seconds and reproduced on the real implementations
+  \end{itemize}
+  \vspace{1.0em}
+  \begin{center}
+    \begin{minipage}{0.94\textwidth}
+      \centering
+      \alert{\textbf{Formal modeling and verification are an essential step}}\par
+      \alert{\textbf{in driving the deployment of INC systems.}}
+    \end{minipage}
+  \end{center}
+  \speechnote{16}
+\end{frame}
